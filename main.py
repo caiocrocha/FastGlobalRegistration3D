@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# encoding: utf-8
+
 import open3d as o3d
 import numpy as np
 import time
