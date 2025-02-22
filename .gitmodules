@@ -1,0 +1,3 @@
+[submodule "FastGlobalRegistration"]
+	path = FastGlobalRegistration
+	url = https://github.com/isl-org/FastGlobalRegistration/tree/master
