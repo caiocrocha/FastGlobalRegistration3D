@@ -85,19 +85,20 @@ def refine_registration(source, target, source_fpfh, target_fpfh, voxel_size):
     return result
 
 def execute_fast_global_registration(source_down, target_down, source_fpfh,
-                                     target_fpfh, voxel_size):
-    distance_threshold = voxel_size * 0.5
+                                     target_fpfh, voxel_size, division_factor, maximum_correspondence_distance):
+    # distance_threshold = voxel_size * 0.5
     # print(":: Apply fast global registration with distance threshold %.3f" \
     #         % distance_threshold)
     result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
         source_down, target_down, source_fpfh, target_fpfh,
         o3d.pipelines.registration.FastGlobalRegistrationOption(
-            maximum_correspondence_distance=distance_threshold))
+            maximum_correspondence_distance=maximum_correspondence_distance, 
+            division_factor=division_factor))
     return result
 
 voxel_size = 0.05 # means 5cm for this dataset
 
-print("filename,time(s),rmse")
+print("filename,time(s),rmse,division_factor,maximum_correspondence_distance")
 for dire in os.listdir("FastGlobalRegistration/dataset"):
     if os.path.isdir("FastGlobalRegistration/dataset/" + dire):
         source_pth = "FastGlobalRegistration/dataset/" + dire + "/Depth_0000.ply"
@@ -115,22 +116,25 @@ for dire in os.listdir("FastGlobalRegistration/dataset"):
         # draw_registration_result(source_down, target_down,
         #                          result_ransac.transformation)
 
-        start = time.time()
-        result_fast = execute_fast_global_registration(source_down, target_down,
-                                                    source_fpfh, target_fpfh,
-                                                    voxel_size)
-        # print("Fast global registration took %.3f sec.\n" % (time.time() - start))
-        print(f"{dire},{time.time() - start},{result_fast.inlier_rmse}")
-        # draw_registration_result(source_down, target_down,
-        #                          result_fast.transformation)
+        for division_factor in [1.4, 1.2, 1.0]:
+            for maximum_correspondence_distance in [0.05, 0.1, 0.2, 0.5]:
+                maximum_correspondence_distance = voxel_size * maximum_correspondence_distance
+                start = time.time()
+                result_fast = execute_fast_global_registration(source_down, target_down,
+                                                        source_fpfh, target_fpfh,
+                                                        voxel_size, division_factor, maximum_correspondence_distance)
+                # print("Fast global registration took %.3f sec.\n" % (time.time() - start))
+                print(f"{dire},{time.time() - start},{result_fast.inlier_rmse},{division_factor},{maximum_correspondence_distance:.4f}")
+                # draw_registration_result(source_down, target_down,
+                #                          result_fast.transformation)
 
-        # ransac_T = source.transform(result_ransac.transformation)
-        # o3d.io.write_point_cloud("RANSAC.ply", ransac_T)
+                # ransac_T = source.transform(result_ransac.transformation)
+                # o3d.io.write_point_cloud("RANSAC.ply", ransac_T)
 
-        fast_T = source.transform(result_fast.transformation)
-        o3d.io.write_point_cloud("FastGlobalRegistration.ply", fast_T)
+                # fast_T = source.transform(result_fast.transformation)
+                # o3d.io.write_point_cloud("FastGlobalRegistration.ply", fast_T)
 
-        # result_icp = refine_registration(source, target, source_fpfh, target_fpfh,
-        #                                  voxel_size)
-        # print(result_icp)
-        # draw_registration_result(source, target, result_icp.transformation)
+            # result_icp = refine_registration(source, target, source_fpfh, target_fpfh,
+            #                                  voxel_size)
+            # print(result_icp)
+            # draw_registration_result(source, target, result_icp.transformation)
